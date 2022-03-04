@@ -89,7 +89,10 @@ def plot_solution_domain1D(model, domain, ub, lb, Exact_u=None, u_transpose=Fals
 
     ####### Row 1: h(t,x) slices ##################
     gs1 = gridspec.GridSpec(1, 3)
-    gs1.update(top=1-1/3, bottom=0, left=0.1, right=0.9, wspace=0.5)
+    gs1.update(top=1-1/2, bottom=0, left=0.1, right=0.9, wspace=0.5)
+    
+    Zoom_limit = 0.04 + Exact_u[:,:].max().item()   #To see the curve better. Smaller number, Bigger zoom
+
 
     ax = plt.subplot(gs1[0, 0])
     ax.plot(domain[0],Exact_u[:,len_], 'b-', linewidth = 2, label = 'Exact')
@@ -97,18 +100,16 @@ def plot_solution_domain1D(model, domain, ub, lb, Exact_u=None, u_transpose=Fals
     ax.set_xlabel('x')
     ax.set_ylabel('u(t,x)')
     ax.set_title('t = %.2f' % (domain[1][len_]), fontsize = 10)
-    ax.axis('square')
-    ax.set_xlim([-1.1,1.1])
-    ax.set_ylim([-1.1,1.1])
+    ax.set_xlim(lb[0], ub[0])
+    ax.set_ylim([-Zoom_limit, Zoom_limit])
 
     ax = plt.subplot(gs1[0, 1])
     ax.plot(domain[0],Exact_u[:,2*len_], 'b-', linewidth = 2, label = 'Exact')
     ax.plot(domain[0],U_pred[2*len_,:], 'r--', linewidth = 2, label = 'Prediction')
     ax.set_xlabel('x')
     ax.set_ylabel('u(t,x)')
-    ax.axis('square')
-    ax.set_xlim([-1.1,1.1])
-    ax.set_ylim([-1.1,1.1])
+    ax.set_xlim(lb[0], ub[0])
+    ax.set_ylim([-Zoom_limit, Zoom_limit])
     ax.set_title('t = %.2f' % (domain[1][2*len_]), fontsize = 10)
     ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.3), ncol=5, frameon=False)
 
@@ -117,12 +118,104 @@ def plot_solution_domain1D(model, domain, ub, lb, Exact_u=None, u_transpose=Fals
     ax.plot(domain[0],U_pred[3*len_,:], 'r--', linewidth = 2, label = 'Prediction')
     ax.set_xlabel('x')
     ax.set_ylabel('u(t,x)')
-    ax.axis('square')
-    ax.set_xlim([-1.1,1.1])
-    ax.set_ylim([-1.1,1.1])
+    ax.set_xlim(lb[0], ub[0])
+    ax.set_ylim([-Zoom_limit, Zoom_limit])
     ax.set_title('t = %.2f' % (domain[1][3*len_]), fontsize = 10)
 
     plt.show()
+
+
+def plot_solution_domain2D(model, domain, ub, lb, Exact_u=None, u_transpose=False):
+    """
+    Plot a 2D solution Domain
+    Arguments
+    ---------
+    model : model
+        a `model` class which contains the PDE solution
+    domain : Domain
+        a `Domain` object containing the x,y,t pairs
+    ub: list
+        a list of floats containing the upper boundaries of the plot
+    lb : list
+        a list of floats containing the lower boundaries of the plot
+    Exact_u : list
+        a list of the exact values of the solution for comparison
+    u_transpose : Boolean
+        a `bool` describing whether or not to transpose the solution plot of the domain
+    Returns
+    -------
+    None
+    """
+    X, Y, T = np.meshgrid(domain[0],domain[1], domain[2])
+
+    X_star = np.hstack((X.flatten()[:, None], Y.flatten()[:, None], T.flatten()[:, None]))
+    if Exact_u is not None:
+        u_star = Exact_u.T.flatten()[:,None]
+
+    u_pred, f_u_pred = model.predict(X_star)
+    
+    #2D slices through the predicted surface for comparison
+    mesh = 100
+    t = domain[2]
+    t_slices = 5
+    t_delta = ub[2]/t_slices           #time jump to get snapshot
+    print("Time step: ", t_delta)
+    ######################################Prepare mesh for comparison#######################################
+    xm, ym = np.meshgrid(domain[0],domain[1])
+    #######################################Zoom Factor######################################################
+    Zoom_limit = 0.001 + Exact_u[:,:,:].max().item()   #To see the curve better. Smaller number, Bigger zoom
+    u_pred_reshaped = u_pred.reshape(100,100,100)
+    ################################################Slices#################################################
+    for t_slice in range(t_slices+1):
+        fig = plt.figure(figsize=(600, 250), dpi=80)
+        fig.subplots_adjust(left=0.1, bottom=0.5, right=0.125, top=0.6,
+                    wspace=0.3, hspace=None)
+        print("Slice #", t_slice)
+        if t_slice == t_slices:
+            at_index = mesh - 1
+        else:
+            at_index = int(t_slice * mesh/t_slices)
+        print("slicing at index ", at_index)
+    
+        #############################################################################
+        ########################Lay planes on each other#############################
+        
+        ax = fig.add_subplot(t_slices,3, 1, projection='3d')
+        surf = ax.plot_surface(xm,ym, Exact_u[:,:, at_index].T, cmap=mpl.cm.gist_heat, label = 'Exact')
+        ax.plot_wireframe(xm,ym,  u_pred_reshaped[:,:, at_index], rstride=2, cstride=2,label = 'Prediction')
+        ax.view_init(45, 45)
+        ax.set_xlabel('x',fontsize = 15)
+        ax.set_ylabel('y',fontsize = 15)
+        ax.set_zlabel('u(x,y,t)')
+        ax.set_title('$t = %1.3f$'%(t[at_index]), fontsize = 15)
+        ax.set_xlim(lb[0], ub[0])
+        ax.set_ylim(lb[1], ub[1])
+        ax.set_zlim(-Zoom_limit, Zoom_limit)
+        error_u = np.linalg.norm(Exact_u[:,:,at_index]-u_pred_reshaped[:,:,at_index],2)/np.linalg.norm(Exact_u[:,:,at_index],2)
+        print('L2 relative error: %e' % (error_u))
+        ###Observation Probes###
+        slice_at_x = 50
+        slice_at_y = 50
+        ########################
+        #######################Slice Along x ##############################
+        ax = fig.add_subplot(t_slices,3, 2)
+        ax.set_xlabel('x',fontsize = 15)
+        ax.set_ylabel('u(x,y,t)',fontsize = 15)
+        ax.plot(domain[0],Exact_u[:,slice_at_y,at_index],'r-')
+        ax.plot(domain[0],u_pred_reshaped[slice_at_y,:,at_index],'b--')
+        ax.set_xlim(lb[0], ub[0])
+        ax.set_ylim(-Zoom_limit, Zoom_limit)
+        #######################Slice Along y ##############################
+        ax = fig.add_subplot(t_slices,3, 3)
+        ax.set_xlabel('y',fontsize = 15)
+        ax.set_ylabel('u(x,y,t)')
+        ax.plot(domain[1],Exact_u[slice_at_x,:,at_index],'r-', label = 'Exact')
+        ax.plot(domain[1],u_pred_reshaped[:,slice_at_x, at_index],'b--', label = 'Prediction')
+        ax.set_xlim(lb[1], ub[1])
+        ax.set_ylim(-Zoom_limit, Zoom_limit)
+        ax.legend()
+        plt.show()
+    
 
 
 def plot_weights(model, scale = 1):
