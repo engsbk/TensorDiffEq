@@ -89,7 +89,7 @@ def plot_solution_domain1D(model, domain, ub, lb, Exact_u=None, u_transpose=Fals
 
     ####### Row 1: h(t,x) slices ##################
     gs1 = gridspec.GridSpec(1, 3)
-    gs1.update(top=1-1/3, bottom=0, left=0.1, right=0.9, wspace=0.5)
+    gs1.update(top=1-1/2, bottom=0, left=0.1, right=0.9, wspace=0.5)
 
     ax = plt.subplot(gs1[0, 0])
     ax.plot(domain[0],Exact_u[:,len_], 'b-', linewidth = 2, label = 'Exact')
@@ -98,8 +98,8 @@ def plot_solution_domain1D(model, domain, ub, lb, Exact_u=None, u_transpose=Fals
     ax.set_ylabel('u(t,x)')
     ax.set_title('t = %.2f' % (domain[1][len_]), fontsize = 10)
     ax.axis('square')
-    ax.set_xlim([-1.1,1.1])
-    ax.set_ylim([-1.1,1.1])
+    ax.set_xlim([lb[0]-0.1,ub[0]+0.1])
+    ax.set_ylim([lb[1]-0.1,ub[1]+0.1])
 
     ax = plt.subplot(gs1[0, 1])
     ax.plot(domain[0],Exact_u[:,2*len_], 'b-', linewidth = 2, label = 'Exact')
@@ -107,8 +107,8 @@ def plot_solution_domain1D(model, domain, ub, lb, Exact_u=None, u_transpose=Fals
     ax.set_xlabel('x')
     ax.set_ylabel('u(t,x)')
     ax.axis('square')
-    ax.set_xlim([-1.1,1.1])
-    ax.set_ylim([-1.1,1.1])
+    ax.set_xlim([lb[0]-0.1,ub[0]+0.1])
+    ax.set_ylim([lb[1]-0.1,ub[1]+0.1])
     ax.set_title('t = %.2f' % (domain[1][2*len_]), fontsize = 10)
     ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.3), ncol=5, frameon=False)
 
@@ -118,8 +118,8 @@ def plot_solution_domain1D(model, domain, ub, lb, Exact_u=None, u_transpose=Fals
     ax.set_xlabel('x')
     ax.set_ylabel('u(t,x)')
     ax.axis('square')
-    ax.set_xlim([-1.1,1.1])
-    ax.set_ylim([-1.1,1.1])
+    ax.set_xlim([lb[0]-0.1,ub[0]+0.1])
+    ax.set_ylim([lb[1]-0.1,ub[1]+0.1])
     ax.set_title('t = %.2f' % (domain[1][3*len_]), fontsize = 10)
 
     plt.show()
